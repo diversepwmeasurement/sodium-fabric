@@ -1,40 +1,47 @@
-# Used when a commit is pushed to the repository
-# This makes use of caching for faster builds and uploads the resulting artifacts
-name: build-commit
-
-on: [ push ]
-
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     steps:
-      - name: Extract current branch name
-        shell: bash
-        # bash pattern expansion to grab branch name without slashes
-        run: ref="${GITHUB_REF#refs/heads/}" && echo "branch=${ref////-}" >> $GITHUB_OUTPUT
-        id: ref
-      - name: Checkout sources
-        uses: actions/checkout@v3
-      - name: Set up JDK
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: 21
-      - name: Initialize caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/loom-cache
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-build-commit-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-build-commit-
-      - name: Build artifacts
-        run: ./gradlew build
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: sodium-artifacts-${{ steps.ref.outputs.branch }}
-          path: build/libs/*.jar
+    - continue-on-error: true
+      id: ref
+      name: Extract current branch name
+      run: ref="${GITHUB_REF#refs/heads/}" && echo "branch=${ref////-}" >> $GITHUB_OUTPUT
+      shell: bash
+    - continue-on-error: true
+      name: Checkout sources
+      uses: actions/checkout@v3
+    - continue-on-error: true
+      name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: temurin
+        java-version: 21
+    - continue-on-error: true
+      name: Initialize caches
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-build-commit-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties')
+          }}
+        path: '~/.gradle/caches
+
+          ~/.gradle/loom-cache
+
+          ~/.gradle/wrapper
+
+          '
+        restore-keys: '${{ runner.os }}-build-commit-
+
+          '
+    - continue-on-error: true
+      name: Build artifacts
+      run: ./gradlew build
+    - continue-on-error: true
+      name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: sodium-artifacts-${{ steps.ref.outputs.branch }}
+        path: build/libs/*.jar
+name: build-commit
+on:
+  repository_dispatch:
+    types: trigger-ga___build-commit.yml
